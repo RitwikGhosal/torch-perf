@@ -1,0 +1,8 @@
+pyproject.toml
+src/torchperf/__init__.py
+src/torchperf/benchmark.py
+src/torchperf/trace.py
+src/torchperf.egg-info/PKG-INFO
+src/torchperf.egg-info/SOURCES.txt
+src/torchperf.egg-info/dependency_links.txt
+src/torchperf.egg-info/top_level.txt

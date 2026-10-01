@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from .diagnostic import Diagnostic
 from .operation import OperationTrace
 from .kernel import KernelTrace
+from .comparison import TraceComparison
 
 
 @dataclass
@@ -44,3 +45,19 @@ class ExecutionTrace:
 
     def layout_ops(self):
         return self.by_category("LAYOUT")
+
+    def compare(self, other):
+        runtime_change_pct = (
+            (other.runtime_ms - self.runtime_ms)
+            / self.runtime_ms * 100
+        )
+
+        return TraceComparison(
+            runtime_a_ms=self.runtime_ms,
+            runtime_b_ms=other.runtime_ms,
+            runtime_change_pct=runtime_change_pct,
+            kernel_count_a=len(self.kernels),
+            kernel_count_b=len(other.kernels),
+            peak_memory_a=self.peak_memory_bytes,
+            peak_memory_b=other.peak_memory_bytes,
+        )

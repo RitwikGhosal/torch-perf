@@ -122,3 +122,15 @@ def test_layout_diagnostic():
     codes = [d.code for d in result.diagnostics]
 
     assert "TD002" in codes
+
+def test_compare():
+    x = torch.randn(64, 64)
+
+    result_a = trace(lambda x: x @ x, x)
+    result_b = trace(lambda x: x @ x, x)
+
+    comparison = result_a.compare(result_b)
+
+    assert comparison.runtime_a_ms > 0
+    assert comparison.runtime_b_ms > 0
+    assert isinstance(comparison.runtime_change_pct, float)

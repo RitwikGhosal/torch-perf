@@ -16,6 +16,7 @@ class ExecutionTrace:
     kernels: list[KernelTrace] = field(default_factory=list)
     peak_memory_bytes: int | None = None
     diagnostics: list[Diagnostic] = field(default_factory=list)
+    cuda_launch_count: int = 0    
 
     def by_op(self, name):
         for op in self.ops:
@@ -51,7 +52,7 @@ class ExecutionTrace:
             (other.runtime_ms - self.runtime_ms)
             / self.runtime_ms * 100
         )
-
+        
         return TraceComparison(
             runtime_a_ms=self.runtime_ms,
             runtime_b_ms=other.runtime_ms,
@@ -60,4 +61,6 @@ class ExecutionTrace:
             kernel_count_b=len(other.kernels),
             peak_memory_a=self.peak_memory_bytes,
             peak_memory_b=other.peak_memory_bytes,
+            cuda_launch_count_a=self.cuda_launch_count,
+            cuda_launch_count_b=other.cuda_launch_count,
         )

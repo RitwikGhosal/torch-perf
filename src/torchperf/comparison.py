@@ -13,3 +13,6 @@ class TraceComparison:
 
     peak_memory_a: int | None
     peak_memory_b: int | None
+
+    cuda_launch_count_a: int
+    cuda_launch_count_b: int

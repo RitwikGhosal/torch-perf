@@ -36,6 +36,11 @@ def trace(fn, *args, **kwargs):
     profile_data = collect_profile(fn, *args, **kwargs)
     ops = profile_data["ops"]
     kernels = profile_data["kernels"]
+    cuda_launch_count = 0
+
+    if "cudaLaunchKernel" in ops:
+        cuda_launch_count = ops["cudaLaunchKernel"]["calls"]
+
     peak_memory_bytes = collect_peak_memory(fn, *args, **kwargs)
 
     operation_traces = []
@@ -74,6 +79,7 @@ def trace(fn, *args, **kwargs):
         ops=operation_traces,
         kernels = kernel_traces,
         peak_memory_bytes=peak_memory_bytes,
+        cuda_launch_count=cuda_launch_count,
     )
 
     diagnostic_rules = [

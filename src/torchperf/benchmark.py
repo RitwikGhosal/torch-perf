@@ -46,6 +46,7 @@ def trace(fn, *args, **kwargs):
                 calls=op_data["calls"],
                 flops=flops,
                 cpu_time_us=op_data["cpu_time_us"],
+                cuda_time_us=op_data["cuda_time_us"],
                 category=categorize_op(op_name),
             )
         )

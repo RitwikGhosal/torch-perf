@@ -7,4 +7,5 @@ class OperationTrace:
     calls: int
     flops: int | None = None
     cpu_time_us: float | None = None
+    cuda_time_us: float | None = None
     category: str | None = None

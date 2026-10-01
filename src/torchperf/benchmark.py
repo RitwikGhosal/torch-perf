@@ -3,11 +3,13 @@ import torch.utils.benchmark as benchmark
 
 from .trace import ExecutionTrace
 from .collectors.flops import collect_flops
-from .collectors.profiler import collect_ops
+from .collectors.profiler import collect_profile
 from .operation import OperationTrace
 from .categories import categorize_op
 from .collectors.memory import collect_peak_memory
 from .diagnostics import detect_copy_pressure, detect_layout_pressure
+from .collectors.profiler import collect_profile
+from .kernel import KernelTrace
 
 
 def _infer_device(args, kwargs):
@@ -31,7 +33,9 @@ def trace(fn, *args, **kwargs):
     measurement = timer.blocked_autorange()
 
     flop_data = collect_flops(fn, *args, **kwargs)
-    ops = collect_ops(fn, *args, **kwargs)
+    profile_data = collect_profile(fn, *args, **kwargs)
+    ops = profile_data["ops"]
+    kernels = profile_data["kernels"]
     peak_memory_bytes = collect_peak_memory(fn, *args, **kwargs)
 
     operation_traces = []
@@ -50,6 +54,17 @@ def trace(fn, *args, **kwargs):
                 category=categorize_op(op_name),
             )
         )
+
+    kernel_traces = []
+
+    for kernel_name, kernel_data in kernels.items():
+        kernel_traces.append(
+            KernelTrace(
+                name = kernel_name,
+                calls = kernel_data["calls"],
+                cuda_time_us = kernel_data["cuda_time_us"],
+            )
+        )
         
     trace_result =  ExecutionTrace(
         runtime_ms=measurement.median * 1000,
@@ -57,6 +72,7 @@ def trace(fn, *args, **kwargs):
         total_flops=flop_data["total"],
         flops_by_op=flop_data["by_op"],
         ops=operation_traces,
+        kernels = kernel_traces,
         peak_memory_bytes=peak_memory_bytes,
     )
 

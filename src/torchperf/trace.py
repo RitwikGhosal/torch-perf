@@ -82,8 +82,13 @@ class ExecutionTrace:
             lines.append(f"CUDA launches: {self.cuda_launch_count}")
 
         lines.append("")
-        lines.append("Top operations")
-        lines.append("-" * 14)
+
+        if self.device.startswith("cuda"):
+            lines.append("Top operations (CPU-side profiler time)")
+            lines.append("-" * 39)
+        else:
+            lines.append("Top operations")
+            lines.append("-" * 14)
 
         for op in self.slowest_ops(5):
             time_ms = (
@@ -98,6 +103,20 @@ class ExecutionTrace:
                 f"{time_ms:>8.3f} ms   "
                 f"{op.category or 'OTHER'}"
             )
+
+        if self.kernels:
+            lines.append("")
+            lines.append("Top CUDA kernels")
+            lines.append("-" * 16)
+
+            for kernel in self.slowest_kernels(5):
+                time_ms = kernel.cuda_time_us / 1000
+
+                lines.append(
+                    f"{kernel.name:<40} "
+                    f"{kernel.calls:>3} calls   "
+                    f"{time_ms:>8.3f} ms"
+                )
 
         if self.modules:
             lines.append("")

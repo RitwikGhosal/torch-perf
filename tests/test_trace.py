@@ -174,3 +174,34 @@ def test_profile_api():
     assert result.runtime_ms > 0
     assert result.total_flops is not None
     assert len(result.ops) > 0
+
+def test_module_op_attribution():
+    class TinyMLP(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc1 = torch.nn.Linear(16, 32)
+            self.fc2 = torch.nn.Linear(32, 8)
+
+        def forward(self, x):
+            x = self.fc1(x)
+            x = torch.relu(x)
+            return self.fc2(x)
+
+    model = TinyMLP()
+    x = torch.randn(4, 16)
+
+    result = profile(model, x)
+
+    fc1 = result.module("fc1")
+    fc2 = result.module("fc2")
+
+    assert fc1 is not None
+    assert fc2 is not None
+
+    fc1_names = [op.name for op in fc1.ops]
+    fc2_names = [op.name for op in fc2.ops]
+
+    assert "aten::linear" in fc1_names
+    assert "aten::addmm" in fc1_names
+    assert "aten::linear" in fc2_names
+    assert "aten::addmm" in fc2_names

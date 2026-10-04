@@ -19,8 +19,9 @@ class TinyMLP(nn.Module):
 model = TinyMLP()
 x = torch.randn(32, 128)
 
-profile_data = collect_profile(model, x)
-print(profile_data["modules"])
+#profile_data = collect_profile(model, x)
+#print(profile_data["module_ops"])
+#print(profile_data["modules"])
 
 from torchperf import profile
 
@@ -29,6 +30,6 @@ result = profile(model, x)
 print(result.module("fc1"))
 print(result.module("fc2"))
 
-for name in profile_data["ops"]:
-    if name.startswith("TORCHPERF_MODULE::"):
-        print(name)
+#for name in profile_data["ops"]:
+#    if name.startswith("TORCHPERF_MODULE::"):
+#        print(name)

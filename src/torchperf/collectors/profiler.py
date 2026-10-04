@@ -2,6 +2,14 @@ import torch
 
 from .modules import add_module_ranges
 
+def _find_module_ancestor(event):
+    parent = event.cpu_parent
+    while parent is not None:
+        if parent.name.startswith("TORCHPERF_MODULE::"):
+            return parent.name.removeprefix("TORCHPERF_MODULE::")
+        parent = parent.cpu_parent
+    return None
+
 
 def collect_profile(fn, *args, **kwargs):
     activities = [torch.profiler.ProfilerActivity.CPU]
@@ -27,6 +35,27 @@ def collect_profile(fn, *args, **kwargs):
     ops = {}
     kernels = {}
     modules = {}
+    module_ops = {}
+
+    for event in prof.events():
+        if not event.name.startswith("aten::"):
+            continue
+
+        module_name = _find_module_ancestor(event)
+
+        if module_name is None:
+            continue
+        if module_name not in module_ops:
+            module_ops[module_name] = {}
+
+        if event.name not in module_ops[module_name]:
+            module_ops[module_name][event.name] = {
+                "calls": 0,
+                "cpu_time_us": 0.0,
+            }
+
+        module_ops[module_name][event.name]["calls"] += 1
+        module_ops[module_name][event.name]["cpu_time_us"] += event.cpu_time_total
 
     for event in prof.key_averages():
         if event.key.startswith("TORCHPERF_MODULE::"):
@@ -63,4 +92,5 @@ def collect_profile(fn, *args, **kwargs):
         "ops": ops,
         "kernels": kernels,
         "modules": modules,
+        "module_ops": module_ops,
     }

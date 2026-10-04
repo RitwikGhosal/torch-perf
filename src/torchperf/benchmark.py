@@ -47,10 +47,12 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
             "ops": {},
             "kernels": {},
             "modules": {},
+            "module_ops": {},
         }
     ops = profile_data["ops"]
     kernels = profile_data["kernels"]
     modules = profile_data["modules"]
+    module_ops = profile_data["module_ops"]
     cuda_launch_count = 0
 
     if "cudaLaunchKernel" in ops:
@@ -92,9 +94,22 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
     module_traces = []
 
     for module_name, module_data in modules.items():
+        attributed_ops = []
+
+        for op_name, op_data in module_ops.get(module_name, {}).items():
+            attributed_ops.append(
+                OperationTrace(
+                    name=op_name,
+                    calls=op_data["calls"],
+                    cpu_time_us=op_data["cpu_time_us"],
+                    category=categorize_op(op_name),
+                )
+            )
+
         module_traces.append(
             ModuleTrace(
                 name=module_name,
+                ops=attributed_ops,
                 cpu_time_us=module_data["cpu_time_us"],
                 cuda_time_us=module_data["cuda_time_us"],
             )

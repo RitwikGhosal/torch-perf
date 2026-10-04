@@ -131,6 +131,13 @@ class ExecutionTrace:
                     f"{diagnostic.title}"
                 )
 
+                ops = diagnostic.evidence.get("ops", [])
+
+                for op in ops:
+                    lines.append(
+                        f"  - {op['name']}: {op['calls']} calls"
+                    )
+
         return "\n".join(lines)
     
     def compare(self, other):

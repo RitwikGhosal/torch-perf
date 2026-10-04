@@ -3,7 +3,6 @@ from .diagnostic import Diagnostic
 
 def detect_copy_pressure(trace):
     copies = trace.copy_ops()
-
     total_copy_calls = sum(op.calls for op in copies)
 
     if total_copy_calls >= 3:
@@ -14,6 +13,13 @@ def detect_copy_pressure(trace):
             evidence={
                 "copy_op_types": len(copies),
                 "copy_calls": total_copy_calls,
+                "ops": [
+                    {
+                        "name": op.name,
+                        "calls": op.calls,
+                    }
+                    for op in copies
+                ],
             },
         )
 
@@ -21,7 +27,6 @@ def detect_copy_pressure(trace):
 
 def detect_layout_pressure(trace):
     layout_ops = trace.layout_ops()
-
     total_layout_calls = sum(op.calls for op in layout_ops)
 
     if total_layout_calls >= 5:
@@ -32,6 +37,13 @@ def detect_layout_pressure(trace):
             evidence={
                 "layout_op_types": len(layout_ops),
                 "layout_calls": total_layout_calls,
+                "ops": [
+                    {
+                        "name": op.name,
+                        "calls": op.calls,
+                    }
+                    for op in layout_ops
+                ],
             },
         )
 

@@ -106,14 +106,19 @@ class ExecutionTrace:
 
             for module in sorted(
                 self.modules,
-                key=lambda m: m.cpu_time_us or 0,
+                key = lambda m: (
+                    m.cuda_time_us
+                    if self.device.startswith("cuda")
+                    else m.cpu_time_us
+                ) or 0,
                 reverse=True,
             ):
-                time_ms = (
-                    module.cpu_time_us / 1000
-                    if module.cpu_time_us is not None
-                    else 0
-                )
+                if self.device.startswith("cuda"):
+                    time_us = module.cuda_time_us
+                else:
+                    time_us = module.cpu_time_us
+
+                time_ms = time_us / 1000 if time_us is not None else 0
 
                 lines.append(
                     f"{module.name:<24} "

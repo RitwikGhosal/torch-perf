@@ -134,3 +134,21 @@ def test_compare():
     assert comparison.runtime_a_ms > 0
     assert comparison.runtime_b_ms > 0
     assert isinstance(comparison.runtime_change_pct, float)
+
+def test_trace_with_collectors_disabled():
+    x = torch.randn(64, 64)
+
+    result = trace(
+        lambda x: x @ x,
+        x,
+        collect_flops_enabled=False,
+        collect_profile_enabled=False,
+        collect_memory_enabled=False,
+    )
+
+    assert result.runtime_ms > 0
+    assert result.total_flops is None
+    assert result.flops_by_op == {}
+    assert result.ops == []
+    assert result.kernels == []
+    assert result.peak_memory_bytes is None

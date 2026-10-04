@@ -20,7 +20,7 @@ def _infer_device(args, kwargs):
     return "cpu"
 
 
-def trace(fn, *args, **kwargs):
+def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, collect_memory_enabled=True, **kwargs):
     def runner():
         with torch.inference_mode():
             return fn(*args, **kwargs)
@@ -32,8 +32,20 @@ def trace(fn, *args, **kwargs):
 
     measurement = timer.blocked_autorange()
 
-    flop_data = collect_flops(fn, *args, **kwargs)
-    profile_data = collect_profile(fn, *args, **kwargs)
+    if collect_flops_enabled:
+        flop_data = collect_flops(fn, *args, **kwargs)
+    else:
+        flop_data = {
+            "total": None,
+            "by_op": {},
+        }
+    if collect_profile_enabled:
+        profile_data = collect_profile(fn, *args, **kwargs)
+    else:
+        profile_data = {
+            "ops": {},
+            "kernels": {},
+        }
     ops = profile_data["ops"]
     kernels = profile_data["kernels"]
     cuda_launch_count = 0
@@ -41,7 +53,10 @@ def trace(fn, *args, **kwargs):
     if "cudaLaunchKernel" in ops:
         cuda_launch_count = ops["cudaLaunchKernel"]["calls"]
 
-    peak_memory_bytes = collect_peak_memory(fn, *args, **kwargs)
+    if collect_memory_enabled:
+        peak_memory_bytes = collect_peak_memory(fn, *args, **kwargs)
+    else:
+        peak_memory_bytes = None
 
     operation_traces = []
 

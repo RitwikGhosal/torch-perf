@@ -26,9 +26,7 @@ x = torch.randn(32, 128)
 from torchperf import profile
 
 result = profile(model, x)
-
-print(result.module("fc1"))
-print(result.module("fc2"))
+print(result.report())
 
 #for name in profile_data["ops"]:
 #    if name.startswith("TORCHPERF_MODULE::"):

@@ -205,3 +205,21 @@ def test_module_op_attribution():
     assert "aten::addmm" in fc1_names
     assert "aten::linear" in fc2_names
     assert "aten::addmm" in fc2_names
+
+def test_report():
+    x = torch.randn(32, 32)
+
+    result = profile(lambda x: x @ x, x)
+    report = result.report()
+
+    assert "TorchPerf Report" in report
+    assert "Runtime:" in report
+    assert "Device:" in report
+
+def test_slowest_ops_only_returns_aten_ops():
+    x = torch.randn(32, 32)
+
+    result = profile(lambda x: x @ x, x)
+
+    for op in result.slowest_ops():
+        assert op.name.startswith("aten::")

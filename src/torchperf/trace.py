@@ -31,10 +31,15 @@ class ExecutionTrace:
         return [op for op in self.ops if op.category == category]
 
     def slowest_ops(self, n=5):
+        aten_ops = [
+            op for op in self.ops
+            if op.name.startswith("aten::")
+        ]
+
         return sorted(
-            self.ops,
+            aten_ops,
             key=lambda op: op.cpu_time_us if op.cpu_time_us is not None else 0,
-            reverse=True
+            reverse=True,
         )[:n]
 
     def slowest_kernels(self, n=5):
@@ -56,6 +61,78 @@ class ExecutionTrace:
              return module
         return None
 
+    def report(self):
+        lines = []
+
+        lines.append("TorchPerf Report")
+        lines.append("=" * 16)
+        lines.append("")
+
+        lines.append(f"Runtime: {self.runtime_ms:.3f} ms")
+        lines.append(f"Device: {self.device}")
+
+        if self.total_flops is not None:
+            lines.append(f"FLOPs: {self.total_flops:,}")
+
+        if self.peak_memory_bytes is not None:
+            peak_mib = self.peak_memory_bytes / (1024 ** 2)
+            lines.append(f"Peak memory: {peak_mib:.2f} MiB")
+
+        if self.cuda_launch_count:
+            lines.append(f"CUDA launches: {self.cuda_launch_count}")
+
+        lines.append("")
+        lines.append("Top operations")
+        lines.append("-" * 14)
+
+        for op in self.slowest_ops(5):
+            time_ms = (
+                op.cpu_time_us / 1000
+                if op.cpu_time_us is not None
+                else 0
+            )
+
+            lines.append(
+                f"{op.name:<24} "
+                f"{op.calls:>3} calls   "
+                f"{time_ms:>8.3f} ms   "
+                f"{op.category or 'OTHER'}"
+            )
+
+        if self.modules:
+            lines.append("")
+            lines.append("Modules")
+            lines.append("-" * 7)
+
+            for module in sorted(
+                self.modules,
+                key=lambda m: m.cpu_time_us or 0,
+                reverse=True,
+            ):
+                time_ms = (
+                    module.cpu_time_us / 1000
+                    if module.cpu_time_us is not None
+                    else 0
+                )
+
+                lines.append(
+                    f"{module.name:<24} "
+                    f"{time_ms:>8.3f} ms"
+                )
+
+        if self.diagnostics:
+            lines.append("")
+            lines.append("Diagnostics")
+            lines.append("-" * 11)
+
+            for diagnostic in self.diagnostics:
+                lines.append(
+                    f"[{diagnostic.severity}] "
+                    f"{diagnostic.title}"
+                )
+
+        return "\n".join(lines)
+    
     def compare(self, other):
         runtime_change_pct = (
             (other.runtime_ms - self.runtime_ms)

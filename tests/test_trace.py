@@ -223,3 +223,12 @@ def test_slowest_ops_only_returns_aten_ops():
 
     for op in result.slowest_ops():
         assert op.name.startswith("aten::")
+        
+def test_report_contains_sections():
+    x = torch.randn(32, 32)
+
+    result = profile(lambda x: x @ x, x)
+    report = result.report()
+
+    assert "TorchPerf Report" in report
+    assert "Top operations" in report

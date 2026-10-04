@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
+from unicodedata import name
 
 from .diagnostic import Diagnostic
 from .operation import OperationTrace
 from .kernel import KernelTrace
 from .comparison import TraceComparison
+from .module import ModuleTrace
 
 
 @dataclass
@@ -17,6 +19,7 @@ class ExecutionTrace:
     peak_memory_bytes: int | None = None
     diagnostics: list[Diagnostic] = field(default_factory=list)
     cuda_launch_count: int = 0    
+    modules: list[ModuleTrace] = field(default_factory=list)
 
     def by_op(self, name):
         for op in self.ops:
@@ -46,6 +49,12 @@ class ExecutionTrace:
 
     def layout_ops(self):
         return self.by_category("LAYOUT")
+
+    def module(self, name):
+        for module in self.modules:
+            if module.name == name:
+             return module
+        return None
 
     def compare(self, other):
         runtime_change_pct = (

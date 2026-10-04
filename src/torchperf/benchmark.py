@@ -10,6 +10,7 @@ from .collectors.memory import collect_peak_memory
 from .diagnostics import detect_copy_pressure, detect_layout_pressure
 from .collectors.profiler import collect_profile
 from .kernel import KernelTrace
+from .module import ModuleTrace
 
 
 def _infer_device(args, kwargs):
@@ -45,9 +46,11 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
         profile_data = {
             "ops": {},
             "kernels": {},
+            "modules": {},
         }
     ops = profile_data["ops"]
     kernels = profile_data["kernels"]
+    modules = profile_data["modules"]
     cuda_launch_count = 0
 
     if "cudaLaunchKernel" in ops:
@@ -85,6 +88,17 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
                 cuda_time_us = kernel_data["cuda_time_us"],
             )
         )
+
+    module_traces = []
+
+    for module_name, module_data in modules.items():
+        module_traces.append(
+            ModuleTrace(
+                name=module_name,
+                cpu_time_us=module_data["cpu_time_us"],
+                cuda_time_us=module_data["cuda_time_us"],
+            )
+        )
         
     trace_result =  ExecutionTrace(
         runtime_ms=measurement.median * 1000,
@@ -95,6 +109,7 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
         kernels = kernel_traces,
         peak_memory_bytes=peak_memory_bytes,
         cuda_launch_count=cuda_launch_count,
+        modules=module_traces,
     )
 
     diagnostic_rules = [

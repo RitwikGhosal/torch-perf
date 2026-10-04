@@ -112,9 +112,14 @@ class ExecutionTrace:
             for kernel in self.slowest_kernels(5):
                 time_ms = kernel.cuda_time_us / 1000
 
+                display_name = kernel.name
+
+                if len(display_name) > 60:
+                    display_name = display_name[:57] + "..."
+
                 lines.append(
-                    f"{kernel.name:<40} "
-                    f"{kernel.calls:>3} calls   "
+                    f"{display_name:<60} "
+                    f"{kernel.calls:>3} calls "
                     f"{time_ms:>8.3f} ms"
                 )
 

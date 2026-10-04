@@ -1,5 +1,5 @@
 import torch
-import torch.utils.benchmark as benchmark
+import torch.utils.benchmark as torch_benchmark
 
 from .trace import ExecutionTrace
 from .collectors.flops import collect_flops
@@ -25,7 +25,7 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
         with torch.inference_mode():
             return fn(*args, **kwargs)
 
-    timer = benchmark.Timer(
+    timer = torch_benchmark.Timer(
         stmt="runner()",
         globals={"runner": runner},
     )
@@ -108,3 +108,24 @@ def trace(fn, *args, collect_flops_enabled=True, collect_profile_enabled=True, c
             trace_result.diagnostics.append(diagnostic)
 
     return trace_result
+
+def benchmark(fn, *args, **kwargs):
+    return trace(
+        fn,
+        *args,
+        collect_flops_enabled=False,
+        collect_profile_enabled=False,
+        collect_memory_enabled=False,
+        **kwargs,
+    )
+
+
+def profile(fn, *args, **kwargs):
+    return trace(
+        fn,
+        *args,
+        collect_flops_enabled=True,
+        collect_profile_enabled=True,
+        collect_memory_enabled=True,
+        **kwargs,
+    )

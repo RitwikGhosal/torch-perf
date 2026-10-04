@@ -1,5 +1,7 @@
 import torch
 from torchperf import trace
+from torchperf.benchmark import profile
+from torchperf import trace, benchmark, profile
 
 def test_plain_callable():
     x = torch.randn(1024, 1024)
@@ -152,3 +154,23 @@ def test_trace_with_collectors_disabled():
     assert result.ops == []
     assert result.kernels == []
     assert result.peak_memory_bytes is None
+
+def test_benchmark_api():
+    x = torch.randn(64, 64)
+
+    result = benchmark(lambda x: x @ x, x)
+
+    assert result.runtime_ms > 0
+    assert result.total_flops is None
+    assert result.ops == []
+    assert result.kernels == []
+
+
+def test_profile_api():
+    x = torch.randn(64, 64)
+
+    result = profile(lambda x: x @ x, x)
+
+    assert result.runtime_ms > 0
+    assert result.total_flops is not None
+    assert len(result.ops) > 0
